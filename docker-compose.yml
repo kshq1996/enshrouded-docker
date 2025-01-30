@@ -1,0 +1,43 @@
+services:
+  enshrouded:
+    image: mbround18/enshrouded-docker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SERVER_NAME: "HuaNiaoFengYue" # Optional, Name of the server
+      PASSWORD: "426391" # Optional, Password for the server
+      ADMIN_PASSWORD: "473611" # Optional, Admin password for the server
+    #   SAVE_DIRECTORY: ./savegame # Optional, Save directory for the game
+    #   LOG_DIRECTORY: ./logs # Optional, Log directory for the server
+    #   SERVER_IP: 110.42.41.236 # Optional, IP address for the server
+      GAME_PORT: 15636 # Optional, Game port for the server
+      QUERY_PORT: 15637 # Optional, Query port for the server
+    #   SLOT_COUNT: 16 # Optional, Number of slots for the server
+    ports:
+      - "15636:15636/udp"
+      - "15636:15636/tcp"
+      - "15637:15637/udp"
+      - "15637:15637/tcp"
+    volumes:
+    # 存档在目录下的 savegame 中,这里为了启动快捷,都做了映射,部署其他游戏可以参考
+      - /root/docker-data/enshrouded:/home/steam/enshrouded
+      - /root/docker-data/Steam:/home/steam/.local/share/Steam
+    restart: unless-stopped
+    # 启用宿主机网络
+    network_mode: "host"
+  # 备份游戏文件到 docker-backups
+  backups:
+    image: mbround18/backup-cron:latest
+    environment:
+      - SCHEDULE=*/10 * * * *
+      - INPUT_FOLDER=/home/steam/enshrouded/savegame
+      - OUTPUT_FOLDER=/home/steam/backups
+      - OUTPUT_USER=1000
+      - OUTPUT_GROUP=1000
+      - KEEP_N_DAYS=5
+    volumes:
+      # 备份游戏文件到 docker-backups
+      - /root/docker-data/enshrouded:/home/steam/enshrouded
+      - /root/docker-backups/enshrouded:/home/steam/backups
+    restart: unless-stopped
